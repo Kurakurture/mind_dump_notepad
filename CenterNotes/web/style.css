@@ -1,0 +1,840 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --app-bg: #f7f3ea;
+  --editor-bg: rgba(255, 255, 255, 0.52);
+  --editor-shadow: rgba(0, 0, 0, 0.06);
+  --floating-bg: rgba(20, 20, 20, 0.56);
+  --floating-bg-hover: rgba(20, 20, 20, 0.78);
+  --floating-text: #ffffff;
+  --menu-bg: rgba(255, 255, 255, 0.92);
+  --popover-bg: rgba(255, 255, 255, 0.96);
+  --panel-shadow: rgba(0, 0, 0, 0.16);
+  --popover-shadow: rgba(0, 0, 0, 0.18);
+  --border: transparent;
+  --border-strong: rgba(17, 17, 17, 0.12);
+  --text: #111111;
+  --text-soft: rgba(0, 0, 0, 0.65);
+  --text-muted: rgba(0, 0, 0, 0.45);
+  --text-faint: rgba(0, 0, 0, 0.25);
+  --control-bg: #111111;
+  --control-bg-hover: #000000;
+  --control-text: #ffffff;
+  --note-bg: #f0ece3;
+  --note-pinned-bg: #ebe4d6;
+  --note-secret-bg: #e9e5dc;
+  --note-active-bg: #ded7ca;
+  --note-icon: rgba(93, 83, 67, 0.62);
+  --note-icon-strong: rgba(93, 83, 67, 0.64);
+  --note-action-bg: rgba(112, 94, 62, 0.14);
+  --pin-accent: #8a6a28;
+  --delete-accent: #7a5f38;
+  --accent: #111111;
+  --danger: #b42318;
+  --danger-hover: #981b12;
+  --overlay-strong: rgba(0, 0, 0, 0.28);
+  --overlay-soft: rgba(0, 0, 0, 0.12);
+  --swatch-border: #ffffff;
+  --swatch-shadow: rgba(0, 0, 0, 0.15);
+  --cancel-bg: rgba(17, 17, 17, 0.08);
+  --cancel-bg-hover: rgba(17, 17, 17, 0.12);
+}
+
+body.darkTheme {
+  --app-bg: #1f1f1f;
+  --editor-bg: rgba(47, 47, 47, 0.62);
+  --editor-shadow: rgba(0, 0, 0, 0.18);
+  --floating-bg: rgba(51, 51, 51, 0.88);
+  --floating-bg-hover: #424242;
+  --floating-text: #d0d0d0;
+  --menu-bg: rgba(47, 47, 47, 0.95);
+  --popover-bg: rgba(47, 47, 47, 0.96);
+  --panel-shadow: rgba(0, 0, 0, 0.42);
+  --popover-shadow: rgba(0, 0, 0, 0.36);
+  --border: #2a2a2a;
+  --border-strong: #3a3a3a;
+  --text: #d0d0d0;
+  --text-soft: #ababab;
+  --text-muted: #858585;
+  --text-faint: #5f5f5f;
+  --control-bg: #333333;
+  --control-bg-hover: #424242;
+  --control-text: #d0d0d0;
+  --note-bg: #333333;
+  --note-pinned-bg: #383838;
+  --note-secret-bg: #2b2b2b;
+  --note-active-bg: #3f3f3f;
+  --note-icon: #858585;
+  --note-icon-strong: #858585;
+  --note-action-bg: #424242;
+  --pin-accent: #cfcfcf;
+  --delete-accent: #ababab;
+  --accent: #cfcfcf;
+  --danger: #b54a42;
+  --danger-hover: #9f4039;
+  --overlay-strong: rgba(0, 0, 0, 0.38);
+  --overlay-soft: rgba(0, 0, 0, 0.16);
+  --swatch-border: #2f2f2f;
+  --swatch-shadow: #3a3a3a;
+  --cancel-bg: #333333;
+  --cancel-bg-hover: #424242;
+}
+
+button {
+  transform-origin: center;
+}
+
+button:active,
+button.keyboardPressed {
+  animation: buttonPressJitter 0.18s ease-out both;
+}
+
+@keyframes buttonPressJitter {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  28% {
+    transform: translate(-1px, 1px) scale(0.96) rotate(-1deg);
+  }
+
+  55% {
+    transform: translate(1px, -1px) scale(1.02) rotate(1deg);
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--app-bg);
+  color: var(--text);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 100%;
+  height: calc(env(safe-area-inset-top, 0px) + 19px);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--overlay-strong) 0%,
+    var(--overlay-soft) 42%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  width: 100%;
+  height: calc(env(safe-area-inset-bottom, 0px) + 19px);
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--overlay-strong) 0%,
+    var(--overlay-soft) 42%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+#page {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 56px;
+  transform-origin: center;
+  will-change: opacity, transform, filter;
+}
+
+#editor {
+  width: min(760px, 82vw);
+  max-width: 100%;
+  min-width: 0;
+  min-height: 60vh;
+  outline: none;
+  font-family: "PT Serif", Georgia, serif;
+  font-size: 22px;
+  line-height: 1.55;
+  padding: 48px;
+  background: var(--editor-bg);
+  border-radius: 18px;
+  box-shadow: 0 18px 60px var(--editor-shadow);
+  color: var(--text);
+  caret-color: var(--accent);
+  cursor: text;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: pre-wrap;
+}
+
+#editor * {
+  max-width: 100%;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  white-space: pre-wrap !important;
+}
+
+#editor:empty::before {
+  content: "Пиши здесь...";
+  color: var(--text-faint);
+}
+
+#editor.secretMode {
+  color: var(--text-muted);
+}
+
+#windowDragHandle {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--floating-bg);
+  color: var(--floating-text);
+  cursor: grab;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+#windowDragHandle.visible,
+#windowDragHandle:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#windowDragHandle:hover {
+  transform: scale(1.04);
+  background: var(--floating-bg-hover);
+}
+
+#windowDragHandle:active {
+  cursor: grabbing;
+}
+
+#windowDragHandle svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+  pointer-events: none;
+}
+
+body.fullscreenMode #windowDragHandle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#menuButton {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: var(--floating-bg);
+  color: var(--floating-text);
+  font-size: 22px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+#menuButton.visible,
+#menuButton:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#menuButton:hover {
+  transform: scale(1.04);
+  background: var(--floating-bg-hover);
+}
+
+#menu {
+  position: fixed;
+  top: 72px;
+  right: 18px;
+  z-index: 9;
+  width: min(320px, calc(100vw - 36px));
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--menu-bg);
+  color: var(--text);
+  box-shadow: 0 20px 80px var(--panel-shadow);
+  backdrop-filter: blur(16px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transform-origin: top right;
+  visibility: visible;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+}
+
+.hidden {
+  display: none;
+}
+
+#menu.hidden {
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.98);
+  visibility: hidden;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s 0.16s;
+}
+
+.menuHeader {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.menuHint {
+  flex-shrink: 0;
+  margin: 0 0 12px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.dumpPanel {
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.dumpPanel button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--control-bg);
+  color: var(--control-text);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.dumpPanel button:hover {
+  background: var(--control-bg-hover);
+  transform: scale(1.04);
+}
+
+.dumpPanel button.active {
+  background: var(--note-active-bg);
+  color: var(--accent);
+}
+
+.dumpPanel button:disabled {
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.dumpPanel svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+#notesList {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 8px;
+  overflow-y: auto;
+}
+
+.notesTitle {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+#newNoteButton {
+  height: 28px;
+  flex: 1 1 86px;
+  min-width: 0;
+  border: none;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: var(--control-bg);
+  color: var(--control-text);
+  font-size: 12px;
+  line-height: 28px;
+  cursor: pointer;
+}
+
+.noteItem {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 12px;
+  background-color: var(--note-bg);
+  transition: background-color 0.18s ease;
+}
+
+.noteItem.pinned {
+  background-color: var(--note-pinned-bg);
+}
+
+.noteItem.secret {
+  background-color: var(--note-secret-bg);
+}
+
+.noteOpenButton {
+  display: flex;
+  min-height: 86px;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  padding: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  overflow: hidden;
+}
+
+.notePreview {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: "PT Serif", Georgia, serif;
+  font-size: 15px;
+  line-height: 1.25;
+  width: 100%;
+  text-align: left;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.notePreview.titlePreview {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.noteCreatedDate {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.noteItem:hover,
+.noteItem.active {
+  background-color: var(--note-active-bg);
+}
+
+.noteActions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding-right: 7px;
+}
+
+.secretNoteIcon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  color: var(--note-icon-strong);
+}
+
+.secretNoteIcon svg,
+.pinNoteButton svg,
+.deleteNoteButton svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.pinNoteButton,
+.deleteNoteButton {
+  display: inline-flex;
+  height: 28px;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--note-icon);
+  cursor: pointer;
+  opacity: 0.36;
+  pointer-events: auto;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.noteItem.pinned .pinNoteButton svg {
+  fill: currentColor;
+}
+
+.noteItem:hover .pinNoteButton,
+.noteItem:hover .deleteNoteButton,
+.noteItem.pinned .pinNoteButton {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pinNoteButton:hover,
+.noteItem.pinned .pinNoteButton {
+  background: var(--note-action-bg);
+  color: var(--pin-accent);
+}
+
+.deleteNoteButton:hover {
+  background: var(--note-action-bg);
+  color: var(--delete-accent);
+}
+
+.deleteNoteButton:disabled {
+  opacity: 0.32;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.textSizePanel {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+#decreaseTextButton,
+#increaseTextButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--control-bg);
+  color: var(--control-text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#textSizeValue {
+  min-width: 36px;
+  font-size: 12px;
+  line-height: 28px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+.paletteRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.colorButton,
+.formatButton {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.colorButton {
+  position: relative;
+  border: 2px solid var(--swatch-border);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--swatch-shadow);
+}
+
+.clearFormatColorButton {
+  background: var(--popover-bg);
+}
+
+.clearFormatColorButton::before,
+.clearFormatColorButton::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+}
+
+.clearFormatColorButton::before {
+  border: 2px solid var(--text-muted);
+  border-radius: 50%;
+}
+
+.clearFormatColorButton::after {
+  top: 50%;
+  right: 4px;
+  left: 4px;
+  height: 2px;
+  background: var(--text-muted);
+  transform: rotate(-45deg);
+  transform-origin: center;
+}
+
+.formatButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--cancel-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  box-shadow: 0 1px 2px var(--panel-shadow);
+}
+
+.formatButton:hover {
+  background: var(--cancel-bg-hover);
+}
+
+#selectionColorPanel {
+  position: fixed;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--popover-bg);
+  box-shadow: 0 12px 36px var(--panel-shadow);
+  backdrop-filter: blur(16px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transform-origin: bottom center;
+  visibility: visible;
+  transition: left 0.14s ease-out, top 0.14s ease-out, opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+}
+
+#selectionColorPanel.hidden {
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px) scale(0.96);
+  visibility: hidden;
+  transition: left 0.14s ease-out, top 0.14s ease-out, opacity 0.14s ease, transform 0.14s ease, visibility 0s 0.14s;
+}
+
+#selectionColorPanel.interacting {
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+}
+
+#deleteConfirm {
+  position: fixed;
+  z-index: 30;
+  width: 188px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--popover-bg);
+  color: var(--text);
+  box-shadow: 0 16px 48px var(--popover-shadow);
+  backdrop-filter: blur(16px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transform-origin: top left;
+  visibility: visible;
+  transition: left 0.12s ease-out, top 0.12s ease-out, opacity 0.14s ease, transform 0.14s ease, visibility 0s;
+}
+
+#closeConfirm {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 30;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--popover-bg);
+  color: var(--text);
+  box-shadow: 0 16px 48px var(--popover-shadow);
+  backdrop-filter: blur(16px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s;
+}
+
+#closeConfirm.hidden {
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
+  visibility: hidden;
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s 0.12s;
+}
+
+#deleteConfirm.hidden {
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.96);
+  visibility: hidden;
+  transition: left 0.12s ease-out, top 0.12s ease-out, opacity 0.12s ease, transform 0.12s ease, visibility 0s 0.12s;
+}
+
+#deleteConfirmTitle {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+#closeConfirmTitle {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.deleteConfirmActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.deleteConfirmActions button {
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  padding: 0 11px;
+  font-size: 12px;
+  line-height: 30px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+#cancelDeleteButton {
+  background: var(--cancel-bg);
+  color: var(--text);
+}
+
+#cancelCloseButton {
+  background: var(--cancel-bg);
+  color: var(--text);
+}
+
+#confirmDeleteButton,
+#confirmCloseButton {
+  background: var(--danger);
+  color: var(--control-text);
+}
+
+#cancelDeleteButton:hover,
+#cancelCloseButton:hover {
+  background: var(--cancel-bg-hover);
+}
+
+#confirmDeleteButton:hover,
+#confirmCloseButton:hover {
+  background: var(--danger-hover);
+}
+
+#folderPath {
+  flex-shrink: 0;
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+@media (max-width: 640px) {
+  #page {
+    padding: 28px 12px;
+  }
+
+  #editor {
+    width: 100%;
+    padding: 36px 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active {
+    animation: none;
+  }
+
+  #page {
+    transition: none;
+    will-change: auto;
+  }
+
+  #deleteConfirm {
+    transition: none;
+  }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mind Dump</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <button id="windowDragHandle" type="button" title="Move window" aria-label="Move window">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 11.5V10a2 2 0 0 0-4 0v1" />
+      <path d="M14 10V8a2 2 0 0 0-4 0v4" />
+      <path d="M10 11V9a2 2 0 0 0-4 0v6" />
+      <path d="M18 11.5a2 2 0 0 1 4 0V15a7 7 0 0 1-7 7h-2.7a6 6 0 0 1-4.2-1.7L4 16.2a1.8 1.8 0 0 1 2.5-2.6L10 17" />
+    </svg>
+  </button>
+
+  <button id="menuButton" title="Notes">☰</button>
+
+  <aside id="menu" class="hidden">
+    <div class="menuHeader">
+      <button id="newNoteButton">Добавить</button>
+      <div class="textSizePanel">
+        <button id="decreaseTextButton" title="Уменьшить текст">-</button>
+        <strong id="textSizeValue"></strong>
+        <button id="increaseTextButton" title="Увеличить текст">+</button>
+      </div>
+      <div class="dumpPanel">
+        <button id="pinWindowButton" title="Pin window" aria-label="Pin window">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 17v5" />
+            <path d="m5 17 14 0" />
+            <path d="m8 3 8 0" />
+            <path d="m9 3 1 8-3 6h10l-3-6 1-8" />
+          </svg>
+        </button>
+        <button id="fullscreenButton" title="Toggle fullscreen" aria-label="Toggle fullscreen">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+            <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+            <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+            <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </button>
+        <button id="exportDumpButton" title="Export notes dump" aria-label="Export notes dump">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v11" />
+            <path d="m8 10 4 4 4-4" />
+            <path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </button>
+        <button id="importDumpButton" title="Import notes dump" aria-label="Import notes dump">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21V10" />
+            <path d="m8 14 4-4 4 4" />
+            <path d="M5 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2" />
+          </svg>
+        </button>
+        <button id="themeToggleButton" title="Toggle dark theme" aria-label="Toggle dark theme">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a6 6 0 1 0 9 7.4A8 8 0 1 1 12 3Z" />
+          </svg>
+        </button>
+        <button id="autoFadeButton" title="Fade when inactive" aria-label="Fade when inactive">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+        <button id="closeAppButton" title="Close app" aria-label="Close app">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+        <input id="importDumpInput" type="file" accept=".zip,application/zip" hidden />
+      </div>
+    </div>
+    <p class="menuHint">ESC - открыть/закрыть меню. ESC быстрое двойное нажатие - секретный режим.</p>
+
+    <strong class="notesTitle">Заметки</strong>
+    <div id="notesList"></div>
+
+    <p id="folderPath"></p>
+  </aside>
+
+  <div id="selectionColorPanel" class="hidden">
+    <div class="paletteRow">
+      <button class="colorButton clearFormatColorButton" data-color="clear" title="Clear formatting" aria-label="Clear formatting"></button>
+      <button class="colorButton" data-color="#b42318" style="background:#b42318" title="Red"></button>
+      <button class="colorButton" data-color="#1f6feb" style="background:#1f6feb" title="Blue"></button>
+      <button class="colorButton" data-color="#16833a" style="background:#16833a" title="Green"></button>
+      <button class="colorButton" data-color="#8b3dff" style="background:#8b3dff" title="Purple"></button>
+      <button class="colorButton" data-color="#d97706" style="background:#d97706" title="Orange"></button>
+    </div>
+    <div class="paletteRow">
+      <button class="formatButton" data-command="strikeThrough" title="Strikethrough"><s>S</s></button>
+      <button class="formatButton" data-command="bold" title="Bold"><strong>B</strong></button>
+      <button class="formatButton" data-command="italic" title="Italic"><em>I</em></button>
+      <button class="formatButton" data-command="underline" title="Underline"><u>U</u></button>
+    </div>
+  </div>
+
+  <div id="deleteConfirm" class="hidden" role="dialog" aria-modal="false" aria-labelledby="deleteConfirmTitle">
+    <strong id="deleteConfirmTitle">Удалить заметку?</strong>
+    <div class="deleteConfirmActions">
+      <button id="cancelDeleteButton">Отмена</button>
+      <button id="confirmDeleteButton">Удалить</button>
+    </div>
+  </div>
+
+  <div id="closeConfirm" class="hidden" role="dialog" aria-modal="true" aria-labelledby="closeConfirmTitle">
+    <strong id="closeConfirmTitle">Закрыть приложение?</strong>
+    <div class="deleteConfirmActions">
+      <button id="cancelCloseButton">Отмена</button>
+      <button id="confirmCloseButton">Закрыть</button>
+    </div>
+  </div>
+
+  <main id="page">
+    <section id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off"></section>
+  </main>
+
+  <script src="assets/war-and-peace-pages.js"></script>
+  <script src="assets/classic-poem-pages.js"></script>
+  <script src="assets/secret-note-titles.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
