@@ -2,6 +2,7 @@ const editor = document.getElementById("editor");
 const page = document.getElementById("page");
 const windowDragHandle = document.getElementById("windowDragHandle");
 const menuButton = document.getElementById("menuButton");
+const menuBackdrop = document.getElementById("menuBackdrop");
 const menu = document.getElementById("menu");
 const notesList = document.getElementById("notesList");
 const newNoteButton = document.getElementById("newNoteButton");
@@ -10,7 +11,6 @@ const fullscreenButton = document.getElementById("fullscreenButton");
 const exportDumpButton = document.getElementById("exportDumpButton");
 const importDumpButton = document.getElementById("importDumpButton");
 const themeToggleButton = document.getElementById("themeToggleButton");
-const autoFadeButton = document.getElementById("autoFadeButton");
 const closeAppButton = document.getElementById("closeAppButton");
 const importDumpInput = document.getElementById("importDumpInput");
 const folderPath = document.getElementById("folderPath");
@@ -40,9 +40,9 @@ if (!window.notesAPI && window.__TAURI__?.core?.invoke) {
     pin: (fileName, pinned) => invoke("pin_note", { fileName, pinned }),
     secret: (fileName, secret) => invoke("secret_note", { fileName, secret }),
     setWindowPinned: (pinned) => invoke("set_window_pinned", { pinned }),
+    getWindowPinned: () => invoke("get_window_pinned"),
     startWindowDrag: () => invoke("start_window_drag"),
     toggleFullscreen: () => invoke("toggle_fullscreen"),
-    setWindowOpacity: (opacity) => invoke("set_window_opacity", { opacity }),
     setOpenNote: (fileName) => invoke("set_open_note", { fileName }),
     getOpenNote: () => invoke("get_open_note"),
     closeApp: () => invoke("close_app"),
@@ -216,6 +216,7 @@ if (!window.notesAPI) {
     },
     backup: async () => null,
     setWindowPinned: async (pinned) => Boolean(pinned),
+    getWindowPinned: async () => false,
     startWindowDrag: async () => null,
     toggleFullscreen: async () => {
       if (!document.fullscreenElement) {
@@ -226,7 +227,6 @@ if (!window.notesAPI) {
       await document.exitFullscreen();
       return false;
     },
-    setWindowOpacity: async () => true,
     setOpenNote: async (fileName) => {
       if (fileName) {
         localStorage.setItem("centerNotes.openNote", fileName);
@@ -246,8 +246,6 @@ let pendingSave = false;
 let saveQueuePromise = null;
 let editorFontSize = Number(localStorage.getItem("centerNotes.editorFontSize")) || 22;
 let isDarkTheme = localStorage.getItem("centerNotes.theme") === "dark";
-let isAutoFadeEnabled = localStorage.getItem("centerNotes.autoFade") === "true";
-let isWindowHovered = true;
 let lastMousePosition = null;
 let colorPanelMoveFrame = null;
 let isMousePressed = false;
@@ -260,7 +258,7 @@ let noteTransitionPromise = Promise.resolve();
 let deleteConfirmResolve = null;
 let closeConfirmResolve = null;
 let isWindowPinned = false;
-let isAppFullscreen = Boolean(window.__TAURI__);
+let isAppFullscreen = false;
 
 function updateWindowMode(isFullscreen) {
   isAppFullscreen = Boolean(isFullscreen);
@@ -288,27 +286,9 @@ function toggleTheme() {
   applyTheme();
 }
 
-function applyAutoFadeButton() {
-  autoFadeButton.classList.toggle("active", isAutoFadeEnabled);
-  autoFadeButton.title = isAutoFadeEnabled ? "Disable fade when inactive" : "Fade when inactive";
-  autoFadeButton.setAttribute("aria-pressed", String(isAutoFadeEnabled));
-}
-
-async function updateWindowOpacity() {
-  const opacity = isAutoFadeEnabled && !isWindowHovered ? 0.46 : 1;
-  await window.notesAPI.setWindowOpacity(opacity);
-}
-
-async function toggleAutoFade() {
-  isAutoFadeEnabled = !isAutoFadeEnabled;
-  localStorage.setItem("centerNotes.autoFade", String(isAutoFadeEnabled));
-  applyAutoFadeButton();
-  await updateWindowOpacity();
-}
-
 async function setWindowPinned(pinned) {
-  isWindowPinned = Boolean(pinned) && !isAppFullscreen;
-  await window.notesAPI.setWindowPinned(isWindowPinned);
+  const shouldPin = Boolean(pinned) && !isAppFullscreen;
+  isWindowPinned = await window.notesAPI.setWindowPinned(shouldPin);
   updateWindowMode(isAppFullscreen);
 }
 
@@ -906,6 +886,17 @@ function hideMenuButton() {
   }
 }
 
+function setMenuOpen(isOpen) {
+  menu.classList.toggle("hidden", !isOpen);
+  menuBackdrop.classList.toggle("hidden", !isOpen);
+
+  if (isOpen) {
+    showMenuButton();
+  } else {
+    hideMenuButton();
+  }
+}
+
 function hideWindowDragHandle() {
   windowDragHandle.classList.remove("visible");
 }
@@ -1364,13 +1355,6 @@ function clearSelectionFormatting() {
   document.execCommand("removeFormat", false, null);
   document.execCommand("unlink", false, null);
 
-  for (let level = 0; level < 20; level += 1) {
-    document.execCommand("outdent", false, null);
-  }
-
-  document.execCommand("formatBlock", false, "div");
-  document.execCommand("justifyLeft", false, null);
-
   const selection = window.getSelection();
 
   if (!editorContainsSelection(selection)) {
@@ -1478,14 +1462,16 @@ function finishColorPanelInteraction() {
 }
 
 menuButton.addEventListener("click", async () => {
-  menu.classList.toggle("hidden");
+  const isOpen = menu.classList.contains("hidden");
+  setMenuOpen(isOpen);
 
-  if (!menu.classList.contains("hidden")) {
-    showMenuButton();
+  if (isOpen) {
     await refreshNotesList();
-  } else {
-    hideMenuButton();
   }
+});
+
+menuBackdrop.addEventListener("click", () => {
+  setMenuOpen(false);
 });
 
 newNoteButton.addEventListener("click", async () => {
@@ -1527,10 +1513,6 @@ importDumpButton.addEventListener("click", () => {
 
 themeToggleButton.addEventListener("click", () => {
   toggleTheme();
-});
-
-autoFadeButton.addEventListener("click", async () => {
-  await toggleAutoFade();
 });
 
 closeAppButton.addEventListener("click", async () => {
@@ -1584,7 +1566,7 @@ editor.addEventListener("input", () => {
 });
 
 editor.addEventListener("pointerdown", () => {
-  menu.classList.add("hidden");
+  setMenuOpen(false);
   hideFloatingControls();
 });
 
@@ -1696,15 +1678,8 @@ document.addEventListener("mousemove", (event) => {
 });
 
 document.addEventListener("mouseleave", () => {
-  isWindowHovered = false;
-  updateWindowOpacity();
   hideFloatingControls();
   hideSelectionColorPanel();
-});
-
-document.addEventListener("mouseenter", () => {
-  isWindowHovered = true;
-  updateWindowOpacity();
 });
 
 document.addEventListener("mouseout", (event) => {
@@ -1745,13 +1720,11 @@ document.addEventListener("keydown", (event) => {
     escapePressTimer = window.setTimeout(() => {
       escapePressTimer = null;
       animateButtonPress(menuButton);
-      menu.classList.toggle("hidden");
+      const isOpen = menu.classList.contains("hidden");
+      setMenuOpen(isOpen);
 
-      if (!menu.classList.contains("hidden")) {
-        showMenuButton();
+      if (isOpen) {
         refreshNotesList();
-      } else {
-        hideMenuButton();
       }
     }, 260);
   }
@@ -1772,10 +1745,10 @@ window.addEventListener("beforeunload", saveCurrentNote);
 
 async function init() {
   applyTheme();
-  applyAutoFadeButton();
-  await updateWindowOpacity();
   applyEditorFontSize();
   updateWindowMode(Boolean(document.fullscreenElement));
+  isWindowPinned = await window.notesAPI.getWindowPinned();
+  updateWindowMode(isAppFullscreen);
   folderPath.textContent = await window.notesAPI.path();
 
   const notes = await window.notesAPI.list();

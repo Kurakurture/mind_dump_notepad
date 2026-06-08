@@ -28,6 +28,7 @@
   --note-active-bg: #ded7ca;
   --note-icon: rgba(93, 83, 67, 0.62);
   --note-icon-strong: rgba(93, 83, 67, 0.64);
+  --delete-icon: #8a8173;
   --note-action-bg: rgba(112, 94, 62, 0.14);
   --pin-accent: #8a6a28;
   --delete-accent: #7a5f38;
@@ -68,6 +69,7 @@ body.darkTheme {
   --note-active-bg: #3f3f3f;
   --note-icon: #858585;
   --note-icon-strong: #858585;
+  --delete-icon: #858585;
   --note-action-bg: #424242;
   --pin-accent: #cfcfcf;
   --delete-accent: #ababab;
@@ -315,6 +317,24 @@ body.fullscreenMode #windowDragHandle {
   transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
 }
 
+#menuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  background: var(--overlay-strong);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.18s ease, visibility 0s;
+}
+
+#menuBackdrop.hidden {
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.16s ease, visibility 0s 0.16s;
+}
+
 .hidden {
   display: none;
 }
@@ -533,6 +553,11 @@ body.fullscreenMode #windowDragHandle {
   opacity: 0.36;
   pointer-events: auto;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.deleteNoteButton {
+  color: var(--delete-icon);
+  opacity: 1;
 }
 
 .noteItem.pinned .pinNoteButton svg {

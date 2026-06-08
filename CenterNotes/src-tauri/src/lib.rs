@@ -524,7 +524,12 @@ fn set_window_pinned(window: Window, pinned: bool) -> Result<bool, String> {
         .set_always_on_top(pinned)
         .map_err(|error| error.to_string())?;
 
-    Ok(pinned)
+    window.is_always_on_top().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn get_window_pinned(window: Window) -> Result<bool, String> {
+    window.is_always_on_top().map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -575,6 +580,7 @@ pub fn run() {
             get_open_note,
             close_app,
             set_window_pinned,
+            get_window_pinned,
             start_window_drag,
             toggle_fullscreen
         ])
