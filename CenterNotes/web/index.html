@@ -10,15 +10,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <button id="windowDragHandle" type="button" title="Move window" aria-label="Move window">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M18 11.5V10a2 2 0 0 0-4 0v1" />
-      <path d="M14 10V8a2 2 0 0 0-4 0v4" />
-      <path d="M10 11V9a2 2 0 0 0-4 0v6" />
-      <path d="M18 11.5a2 2 0 0 1 4 0V15a7 7 0 0 1-7 7h-2.7a6 6 0 0 1-4.2-1.7L4 16.2a1.8 1.8 0 0 1 2.5-2.6L10 17" />
-    </svg>
-  </button>
-
   <button id="menuButton" title="Notes">☰</button>
   <div id="menuBackdrop" class="hidden"></div>
 
@@ -52,6 +43,14 @@
             <path d="M12 3v11" />
             <path d="m8 10 4 4 4-4" />
             <path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </button>
+        <button id="exportTxtButton" title="Save current note as TXT" aria-label="Save current note as TXT">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+            <path d="M14 2v6h6" />
+            <path d="M8 13h8" />
+            <path d="M8 17h5" />
           </svg>
         </button>
         <button id="importDumpButton" title="Import notes dump" aria-label="Import notes dump">

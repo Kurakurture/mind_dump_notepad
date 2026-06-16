@@ -117,12 +117,24 @@ body {
   height: 100%;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--app-bg);
   color: var(--text);
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+html {
+  background: transparent;
+}
+
+body {
+  border-radius: 18px;
+  background: var(--app-bg);
+}
+
+body.fullscreenMode {
+  border-radius: 0;
 }
 
 html::-webkit-scrollbar,
@@ -139,6 +151,8 @@ body::before {
   width: 100%;
   height: calc(env(safe-area-inset-top, 0px) + 19px);
   pointer-events: none;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
   background: linear-gradient(
     to bottom,
     var(--overlay-strong) 0%,
@@ -156,6 +170,8 @@ body::after {
   width: 100%;
   height: calc(env(safe-area-inset-bottom, 0px) + 19px);
   pointer-events: none;
+  border-bottom-right-radius: inherit;
+  border-bottom-left-radius: inherit;
   background: linear-gradient(
     to top,
     var(--overlay-strong) 0%,
@@ -210,57 +226,6 @@ body::after {
 
 #editor.secretMode {
   color: var(--text-muted);
-}
-
-#windowDragHandle {
-  position: fixed;
-  top: 18px;
-  left: 18px;
-  z-index: 10;
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: var(--floating-bg);
-  color: var(--floating-text);
-  cursor: grab;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
-}
-
-#windowDragHandle.visible,
-#windowDragHandle:hover {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-#windowDragHandle:hover {
-  transform: scale(1.04);
-  background: var(--floating-bg-hover);
-}
-
-#windowDragHandle:active {
-  cursor: grabbing;
-}
-
-#windowDragHandle svg {
-  width: 23px;
-  height: 23px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.9;
-  pointer-events: none;
-}
-
-body.fullscreenMode #windowDragHandle {
-  opacity: 0;
-  pointer-events: none;
 }
 
 #menuButton {
@@ -370,7 +335,7 @@ body.fullscreenMode #windowDragHandle {
 
 .dumpPanel {
   display: grid;
-  grid-template-columns: repeat(3, 28px);
+  grid-template-columns: repeat(4, 28px);
   flex: 0 0 auto;
   gap: 8px;
 }
@@ -571,9 +536,17 @@ body.fullscreenMode #windowDragHandle {
   pointer-events: auto;
 }
 
-.pinNoteButton:hover,
 .noteItem.pinned .pinNoteButton {
   background: var(--note-action-bg);
+  color: var(--pin-accent);
+}
+
+.pinNoteButton:hover {
+  background: var(--note-action-bg);
+  color: var(--pin-accent);
+}
+
+.noteItem.pinned .pinNoteButton:hover {
   color: var(--pin-accent);
 }
 

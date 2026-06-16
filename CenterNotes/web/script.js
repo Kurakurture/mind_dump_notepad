@@ -1,6 +1,5 @@
 const editor = document.getElementById("editor");
 const page = document.getElementById("page");
-const windowDragHandle = document.getElementById("windowDragHandle");
 const menuButton = document.getElementById("menuButton");
 const menuBackdrop = document.getElementById("menuBackdrop");
 const menu = document.getElementById("menu");
@@ -9,6 +8,7 @@ const newNoteButton = document.getElementById("newNoteButton");
 const pinWindowButton = document.getElementById("pinWindowButton");
 const fullscreenButton = document.getElementById("fullscreenButton");
 const exportDumpButton = document.getElementById("exportDumpButton");
+const exportTxtButton = document.getElementById("exportTxtButton");
 const importDumpButton = document.getElementById("importDumpButton");
 const themeToggleButton = document.getElementById("themeToggleButton");
 const closeAppButton = document.getElementById("closeAppButton");
@@ -263,10 +263,6 @@ let isAppFullscreen = false;
 function updateWindowMode(isFullscreen) {
   isAppFullscreen = Boolean(isFullscreen);
   document.body.classList.toggle("fullscreenMode", Boolean(isFullscreen));
-  windowDragHandle.tabIndex = isFullscreen ? -1 : 0;
-  if (isFullscreen) {
-    hideWindowDragHandle();
-  }
   pinWindowButton.disabled = isFullscreen;
   pinWindowButton.classList.toggle("active", isWindowPinned && !isFullscreen);
   pinWindowButton.title = isWindowPinned ? "Unpin window" : "Pin window";
@@ -762,6 +758,37 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
+function noteHtmlToText(html) {
+  const element = document.createElement("div");
+  element.innerHTML = (html || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(div|p|li|h[1-6]|blockquote)>/gi, "\n");
+
+  return element.textContent
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function txtExportName() {
+  const preview = noteTextPreview(cleanNoteHtml()).text
+    .replace(/[\\/:*?"<>|]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 48);
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  return `${preview || "mind-dump-note"}-${stamp}.txt`;
+}
+
+async function exportCurrentNoteTxt() {
+  await flushPendingSaves();
+  await saveCurrentNote({ refresh: false });
+  const text = noteHtmlToText(cleanNoteHtml());
+  downloadBlob(new Blob([text], { type: "text/plain;charset=utf-8" }), txtExportName());
+}
+
 async function exportNotesDump() {
   await flushPendingSaves();
 
@@ -874,12 +901,6 @@ function showMenuButton() {
   menuButton.classList.add("visible");
 }
 
-function showWindowDragHandle() {
-  if (!isAppFullscreen) {
-    windowDragHandle.classList.add("visible");
-  }
-}
-
 function hideMenuButton() {
   if (menu.classList.contains("hidden")) {
     menuButton.classList.remove("visible");
@@ -897,13 +918,8 @@ function setMenuOpen(isOpen) {
   }
 }
 
-function hideWindowDragHandle() {
-  windowDragHandle.classList.remove("visible");
-}
-
 function hideFloatingControls() {
   hideMenuButton();
-  hideWindowDragHandle();
 }
 
 function animateButtonPress(button) {
@@ -1015,14 +1031,14 @@ function hideSelectionColorPanel() {
 }
 
 function positionSelectionColorPanel(x, y) {
-  const verticalOffset = 20;
+  const verticalOffset = 34;
   const left = Math.min(
     window.innerWidth - selectionColorPanel.offsetWidth - 12,
     Math.max(12, x + 12)
   );
   const top = Math.min(
     window.innerHeight - selectionColorPanel.offsetHeight - 12,
-    Math.max(12, y - selectionColorPanel.offsetHeight - verticalOffset)
+    Math.max(12, y + verticalOffset)
   );
 
   selectionColorPanel.style.left = `${left}px`;
@@ -1494,17 +1510,12 @@ pinWindowButton.addEventListener("click", async () => {
   await setWindowPinned(!isWindowPinned);
 });
 
-windowDragHandle.addEventListener("pointerdown", async (event) => {
-  if (isAppFullscreen || event.button !== 0) {
-    return;
-  }
-
-  event.preventDefault();
-  await window.notesAPI.startWindowDrag();
-});
-
 exportDumpButton.addEventListener("click", async () => {
   await exportNotesDump();
+});
+
+exportTxtButton.addEventListener("click", async () => {
+  await exportCurrentNoteTxt();
 });
 
 importDumpButton.addEventListener("click", () => {
@@ -1656,6 +1667,24 @@ document.addEventListener("mousedown", (event) => {
   }
 });
 
+document.addEventListener("pointerdown", async (event) => {
+  if (isAppFullscreen || event.button !== 0) {
+    return;
+  }
+
+  const target = event.target;
+  const isMenuEvent = menu.contains(target) || menuButton.contains(target) || menuBackdrop.contains(target);
+  const isEditorEvent = editor.contains(target);
+  const isPopoverEvent = selectionColorPanel.contains(target) || deleteConfirm.contains(target) || closeConfirm.contains(target);
+
+  if (isMenuEvent || isEditorEvent || isPopoverEvent) {
+    return;
+  }
+
+  event.preventDefault();
+  await window.notesAPI.startWindowDrag();
+});
+
 document.addEventListener("mouseup", () => {
   isMousePressed = false;
 });
@@ -1671,7 +1700,6 @@ document.addEventListener("mousemove", (event) => {
 
   if (event.clientY <= 72) {
     showMenuButton();
-    showWindowDragHandle();
   } else {
     hideFloatingControls();
   }
@@ -1733,7 +1761,6 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("touchstart", (event) => {
   if (event.touches[0] && event.touches[0].clientY <= 72) {
     showMenuButton();
-    showWindowDragHandle();
   }
 });
 
