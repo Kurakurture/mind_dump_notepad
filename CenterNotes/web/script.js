@@ -14,6 +14,8 @@ const themeToggleButton = document.getElementById("themeToggleButton");
 const closeAppButton = document.getElementById("closeAppButton");
 const importDumpInput = document.getElementById("importDumpInput");
 const folderPath = document.getElementById("folderPath");
+const buttonHint = document.getElementById("buttonHint");
+const buttonStatus = document.getElementById("buttonStatus");
 const decreaseTextButton = document.getElementById("decreaseTextButton");
 const increaseTextButton = document.getElementById("increaseTextButton");
 const textSizeValue = document.getElementById("textSizeValue");
@@ -41,6 +43,7 @@ if (!window.notesAPI && window.__TAURI__?.core?.invoke) {
     secret: (fileName, secret) => invoke("secret_note", { fileName, secret }),
     setWindowPinned: (pinned) => invoke("set_window_pinned", { pinned }),
     getWindowPinned: () => invoke("get_window_pinned"),
+    focusWindow: () => invoke("focus_window"),
     startWindowDrag: () => invoke("start_window_drag"),
     toggleFullscreen: () => invoke("toggle_fullscreen"),
     setOpenNote: (fileName) => invoke("set_open_note", { fileName }),
@@ -217,6 +220,7 @@ if (!window.notesAPI) {
     backup: async () => null,
     setWindowPinned: async (pinned) => Boolean(pinned),
     getWindowPinned: async () => false,
+    focusWindow: async () => null,
     startWindowDrag: async () => null,
     toggleFullscreen: async () => {
       if (!document.fullscreenElement) {
@@ -259,14 +263,87 @@ let deleteConfirmResolve = null;
 let closeConfirmResolve = null;
 let isWindowPinned = false;
 let isAppFullscreen = false;
+let buttonStatusTimer = null;
+let focusWindowTimer = null;
+let lastFocusWindowAt = 0;
+
+const commandLabels = new Map([
+  [decreaseTextButton, "Decrease text size"],
+  [increaseTextButton, "Increase text size"],
+  [pinWindowButton, "Pin window"],
+  [fullscreenButton, "Toggle fullscreen"],
+  [exportDumpButton, "Export notes dump"],
+  [exportTxtButton, "Save current note as TXT"],
+  [importDumpButton, "Import notes dump"],
+  [themeToggleButton, "Toggle theme"],
+  [closeAppButton, "Close app"],
+  [newNoteButton, "Create note"]
+]);
+
+function commandLabel(button) {
+  if (button === pinWindowButton) {
+    return isWindowPinned ? "Unpin window" : "Pin window";
+  }
+
+  if (button === themeToggleButton) {
+    return isDarkTheme ? "Use light theme" : "Use dark theme";
+  }
+
+  if (button === fullscreenButton) {
+    return isAppFullscreen ? "Exit fullscreen" : "Enter fullscreen";
+  }
+
+  return commandLabels.get(button) || button.title || button.getAttribute("aria-label") || "Command";
+}
+
+function setButtonHint(text = "Select a command") {
+  buttonHint.textContent = text;
+}
+
+function showButtonStatus(text) {
+  window.clearTimeout(buttonStatusTimer);
+  buttonStatus.textContent = text;
+  buttonStatus.classList.add("visible");
+
+  buttonStatusTimer = window.setTimeout(() => {
+    buttonStatus.classList.remove("visible");
+  }, 2400);
+}
+
+function flashCommandButton(button) {
+  button.classList.add("commandPressed");
+
+  window.setTimeout(() => {
+    button.classList.remove("commandPressed");
+  }, 160);
+}
+
+function registerCommandButton(button) {
+  button.addEventListener("mouseenter", () => {
+    setButtonHint(commandLabel(button));
+  });
+
+  button.addEventListener("mouseleave", () => {
+    setButtonHint();
+  });
+
+  button.addEventListener("click", () => {
+    flashCommandButton(button);
+    window.setTimeout(() => {
+      showButtonStatus(commandLabel(button));
+    }, 0);
+  });
+}
 
 function updateWindowMode(isFullscreen) {
   isAppFullscreen = Boolean(isFullscreen);
   document.body.classList.toggle("fullscreenMode", Boolean(isFullscreen));
   pinWindowButton.disabled = isFullscreen;
   pinWindowButton.classList.toggle("active", isWindowPinned && !isFullscreen);
+  fullscreenButton.classList.toggle("active", isAppFullscreen);
   pinWindowButton.title = isWindowPinned ? "Unpin window" : "Pin window";
   pinWindowButton.setAttribute("aria-pressed", String(isWindowPinned && !isFullscreen));
+  fullscreenButton.setAttribute("aria-pressed", String(isAppFullscreen));
 }
 
 function applyTheme() {
@@ -338,7 +415,7 @@ async function animatePageIn() {
 }
 
 function applyEditorFontSize() {
-  editorFontSize = Math.min(34, Math.max(16, editorFontSize));
+  editorFontSize = Math.min(34, Math.max(6, editorFontSize));
   editor.style.fontSize = `${editorFontSize}px`;
   textSizeValue.textContent = `${editorFontSize}px`;
   localStorage.setItem("centerNotes.editorFontSize", String(editorFontSize));
@@ -922,6 +999,10 @@ function hideFloatingControls() {
   hideMenuButton();
 }
 
+function isWindowEdgeZone(event) {
+  return event.clientY <= 72 || event.clientY >= window.innerHeight - 40;
+}
+
 function animateButtonPress(button) {
   button.classList.remove("keyboardPressed");
   void button.offsetWidth;
@@ -1030,19 +1111,32 @@ function hideSelectionColorPanel() {
   selectionColorPanel.classList.add("hidden");
 }
 
-function positionSelectionColorPanel(x, y) {
-  const verticalOffset = 34;
+function positionSelectionColorPanel(x, y, placement = "below") {
+  const verticalOffset = 14;
   const left = Math.min(
     window.innerWidth - selectionColorPanel.offsetWidth - 12,
     Math.max(12, x + 12)
   );
-  const top = Math.min(
-    window.innerHeight - selectionColorPanel.offsetHeight - 12,
-    Math.max(12, y + verticalOffset)
-  );
+  const rawTop = placement === "above"
+    ? y - selectionColorPanel.offsetHeight - verticalOffset
+    : y + verticalOffset;
+  const top = Math.min(window.innerHeight - selectionColorPanel.offsetHeight - 12, Math.max(12, rawTop));
 
+  selectionColorPanel.classList.toggle("belowSelection", placement === "below");
   selectionColorPanel.style.left = `${left}px`;
   selectionColorPanel.style.top = `${top}px`;
+}
+
+function selectionDirection(selection) {
+  const anchorRange = document.createRange();
+  const focusRange = document.createRange();
+
+  anchorRange.setStart(selection.anchorNode, selection.anchorOffset);
+  anchorRange.collapse(true);
+  focusRange.setStart(selection.focusNode, selection.focusOffset);
+  focusRange.collapse(true);
+
+  return anchorRange.compareBoundaryPoints(Range.START_TO_START, focusRange) <= 0 ? "forward" : "backward";
 }
 
 function getSelectionFocusRect(selection) {
@@ -1084,13 +1178,15 @@ function updateSelectionColorPanel() {
   }
 
   selectionColorPanel.classList.remove("hidden");
+  const direction = selectionDirection(selection);
+  const placement = direction === "forward" ? "above" : "below";
 
   if (lastMousePosition) {
-    positionSelectionColorPanel(lastMousePosition.x, lastMousePosition.y);
+    positionSelectionColorPanel(lastMousePosition.x, lastMousePosition.y, placement);
     return;
   }
 
-  positionSelectionColorPanel(rect.left + rect.width / 2, rect.top);
+  positionSelectionColorPanel(rect.left + rect.width / 2, rect.top, placement);
 }
 
 function scheduleColorPanelMove() {
@@ -1477,6 +1573,31 @@ function finishColorPanelInteraction() {
   }, 0);
 }
 
+function focusWindowSoon() {
+  if (focusWindowTimer || Date.now() - lastFocusWindowAt < 900) {
+    return;
+  }
+
+  focusWindowTimer = window.setTimeout(async () => {
+    focusWindowTimer = null;
+    lastFocusWindowAt = Date.now();
+    await window.notesAPI.focusWindow();
+  }, 80);
+}
+
+[
+  decreaseTextButton,
+  increaseTextButton,
+  pinWindowButton,
+  fullscreenButton,
+  exportDumpButton,
+  exportTxtButton,
+  importDumpButton,
+  themeToggleButton,
+  closeAppButton,
+  newNoteButton
+].forEach(registerCommandButton);
+
 menuButton.addEventListener("click", async () => {
   const isOpen = menu.classList.contains("hidden");
   setMenuOpen(isOpen);
@@ -1677,12 +1798,19 @@ document.addEventListener("pointerdown", async (event) => {
   const isEditorEvent = editor.contains(target);
   const isPopoverEvent = selectionColorPanel.contains(target) || deleteConfirm.contains(target) || closeConfirm.contains(target);
 
-  if (isMenuEvent || isEditorEvent || isPopoverEvent) {
+  if (isMenuEvent || isPopoverEvent || (isEditorEvent && !isWindowEdgeZone(event))) {
     return;
   }
 
   event.preventDefault();
+  await window.notesAPI.focusWindow();
   await window.notesAPI.startWindowDrag();
+});
+
+document.addEventListener("pointerenter", () => {
+  if (!isAppFullscreen) {
+    focusWindowSoon();
+  }
 });
 
 document.addEventListener("mouseup", () => {
@@ -1690,6 +1818,10 @@ document.addEventListener("mouseup", () => {
 });
 
 document.addEventListener("mousemove", (event) => {
+  if (!isAppFullscreen) {
+    focusWindowSoon();
+  }
+
   if (!selectionColorPanel.contains(event.target) && isMousePressed && editorContainsSelection(window.getSelection())) {
     lastMousePosition = {
       x: event.clientX,
@@ -1698,7 +1830,7 @@ document.addEventListener("mousemove", (event) => {
     scheduleColorPanelMove();
   }
 
-  if (event.clientY <= 72) {
+  if (isWindowEdgeZone(event)) {
     showMenuButton();
   } else {
     hideFloatingControls();
@@ -1759,7 +1891,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("touchstart", (event) => {
-  if (event.touches[0] && event.touches[0].clientY <= 72) {
+  if (event.touches[0] && isWindowEdgeZone(event.touches[0])) {
     showMenuButton();
   }
 });

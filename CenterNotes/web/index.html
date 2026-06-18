@@ -15,13 +15,14 @@
 
   <aside id="menu" class="hidden">
     <div class="menuHeader">
-      <button id="newNoteButton">Добавить</button>
-      <div class="textSizePanel">
-        <button id="decreaseTextButton" title="Уменьшить текст">-</button>
-        <strong id="textSizeValue">22px</strong>
-        <button id="increaseTextButton" title="Увеличить текст">+</button>
+      <div class="menuStatusRow">
+        <span id="buttonHint">Select a command</span>
+        <span id="buttonStatus" aria-live="polite"></span>
       </div>
       <div class="dumpPanel">
+        <button id="decreaseTextButton" title="Decrease text size" aria-label="Decrease text size">-</button>
+        <strong id="textSizeValue">22px</strong>
+        <button id="increaseTextButton" title="Increase text size" aria-label="Increase text size">+</button>
         <button id="pinWindowButton" title="Pin window" aria-label="Pin window">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 17v5" />
@@ -76,7 +77,10 @@
     </div>
     <p class="menuHint">ESC - открыть/закрыть меню. ESC быстрое двойное нажатие - секретный режим.</p>
 
-    <strong class="notesTitle">Заметки</strong>
+    <div class="notesTitleRow">
+      <strong class="notesTitle">Заметки</strong>
+      <button id="newNoteButton">Добавить</button>
+    </div>
     <div id="notesList"></div>
 
     <p id="folderPath"></p>

@@ -22,6 +22,11 @@
   --control-bg: #111111;
   --control-bg-hover: #000000;
   --control-text: #ffffff;
+  --control-off-bg: rgba(17, 17, 17, 0.08);
+  --control-off-hover: rgba(17, 17, 17, 0.14);
+  --control-off-text: #111111;
+  --control-on-bg: #111111;
+  --control-on-text: #ffffff;
   --note-bg: #f0ece3;
   --note-pinned-bg: #ebe4d6;
   --note-secret-bg: #e9e5dc;
@@ -63,6 +68,11 @@ body.darkTheme {
   --control-bg: #333333;
   --control-bg-hover: #424242;
   --control-text: #d0d0d0;
+  --control-off-bg: #3a3a3a;
+  --control-off-hover: #484848;
+  --control-off-text: #d0d0d0;
+  --control-on-bg: #d0d0d0;
+  --control-on-text: #1f1f1f;
   --note-bg: #333333;
   --note-pinned-bg: #383838;
   --note-secret-bg: #2b2b2b;
@@ -129,7 +139,7 @@ html {
 }
 
 body {
-  border-radius: 18px;
+  border-radius: 0;
   background: var(--app-bg);
 }
 
@@ -189,6 +199,11 @@ body::after {
   padding: 56px;
   transform-origin: center;
   will-change: opacity, transform, filter;
+}
+
+body.fullscreenMode #page {
+  padding-right: 0;
+  padding-left: 0;
 }
 
 #editor {
@@ -262,7 +277,7 @@ body::after {
   top: 72px;
   right: 18px;
   z-index: 9;
-  width: min(320px, calc(100vw - 36px));
+  width: min(356px, calc(100vw - 36px));
   max-height: calc(100vh - 96px);
   display: flex;
   flex-direction: column;
@@ -316,13 +331,41 @@ body::after {
 .menuHeader {
   display: flex;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
   margin-bottom: 14px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border-strong);
+}
+
+.menuStatusRow {
+  min-height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+#buttonHint,
+#buttonStatus {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#buttonStatus {
+  color: var(--text-soft);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+#buttonStatus.visible {
+  opacity: 1;
 }
 
 .menuHint {
@@ -335,34 +378,37 @@ body::after {
 
 .dumpPanel {
   display: grid;
-  grid-template-columns: repeat(4, 28px);
-  flex: 0 0 auto;
+  grid-template-columns: 32px 46px repeat(3, 32px);
+  align-self: end;
   gap: 8px;
 }
 
 .dumpPanel button {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: var(--control-bg);
-  color: var(--control-text);
+  background: var(--control-off-bg);
+  color: var(--control-off-text);
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 1px 4px var(--panel-shadow);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dumpPanel button:hover {
-  background: var(--control-bg-hover);
+  background: var(--control-off-hover);
   transform: scale(1.04);
 }
 
-.dumpPanel button.active {
-  background: var(--note-active-bg);
-  color: var(--accent);
+.dumpPanel button.active,
+.dumpPanel button.commandPressed {
+  background: var(--control-on-bg);
+  color: var(--control-on-text);
+  box-shadow: 0 2px 8px var(--panel-shadow);
 }
 
 .dumpPanel button:disabled {
@@ -380,6 +426,20 @@ body::after {
   stroke-width: 2;
 }
 
+.dumpPanel #textSizeValue {
+  width: 46px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--control-off-bg);
+  color: var(--control-off-text);
+  font-size: 12px;
+  line-height: 1;
+  box-shadow: 0 1px 4px var(--panel-shadow);
+}
+
 #notesList {
   flex: 1 1 auto;
   min-height: 0;
@@ -387,14 +447,19 @@ body::after {
   overflow-y: auto;
 }
 
-.notesTitle {
+.notesTitleRow {
   flex-shrink: 0;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 #newNoteButton {
   height: 28px;
-  flex: 1 1 86px;
+  flex: 0 0 auto;
+  max-width: 42%;
   min-width: 0;
   border: none;
   border-radius: 999px;
@@ -409,7 +474,7 @@ body::after {
 .noteItem {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-columns: minmax(0, 1fr) 44px;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
@@ -479,7 +544,7 @@ body::after {
   align-items: center;
   justify-content: center;
   align-self: stretch;
-  padding-right: 7px;
+  padding-right: 6px;
 }
 
 .secretNoteIcon {
@@ -506,8 +571,8 @@ body::after {
 .pinNoteButton,
 .deleteNoteButton {
   display: inline-flex;
-  height: 28px;
-  width: 28px;
+  height: 32px;
+  width: 32px;
   align-items: center;
   justify-content: center;
   border: none;
@@ -515,7 +580,7 @@ body::after {
   background: transparent;
   color: var(--note-icon);
   cursor: pointer;
-  opacity: 0.36;
+  opacity: 0.72;
   pointer-events: auto;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
@@ -561,32 +626,9 @@ body::after {
   cursor: not-allowed;
 }
 
-.textSizePanel {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 6px;
-}
-
 #decreaseTextButton,
 #increaseTextButton {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 50%;
-  background: var(--control-bg);
-  color: var(--control-text);
   font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-#textSizeValue {
-  min-width: 36px;
-  font-size: 12px;
-  line-height: 28px;
-  color: var(--text-soft);
-  text-align: center;
 }
 
 .paletteRow {
@@ -672,6 +714,10 @@ body::after {
   transform-origin: bottom center;
   visibility: visible;
   transition: left 0.14s ease-out, top 0.14s ease-out, opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+}
+
+#selectionColorPanel.belowSelection {
+  transform-origin: top center;
 }
 
 #selectionColorPanel.hidden {
@@ -819,6 +865,23 @@ body::after {
   #editor {
     width: 100%;
     padding: 36px 22px;
+  }
+}
+
+@media (max-width: 390px) {
+  .dumpPanel {
+    grid-template-columns: 30px 42px repeat(3, 30px);
+    gap: 7px;
+  }
+
+  .dumpPanel button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .dumpPanel #textSizeValue {
+    width: 42px;
+    height: 30px;
   }
 }
 

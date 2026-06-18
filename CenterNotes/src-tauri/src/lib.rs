@@ -533,6 +533,11 @@ fn get_window_pinned(window: Window) -> Result<bool, String> {
 }
 
 #[tauri::command]
+fn focus_window(window: Window) -> Result<(), String> {
+    window.set_focus().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn start_window_drag(window: Window) -> Result<(), String> {
     window.start_dragging().map_err(|error| error.to_string())
 }
@@ -581,6 +586,7 @@ pub fn run() {
             close_app,
             set_window_pinned,
             get_window_pinned,
+            focus_window,
             start_window_drag,
             toggle_fullscreen
         ])
